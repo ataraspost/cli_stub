@@ -7,6 +7,7 @@ import (
   	"os/exec"
   	"strings"
 	"errors" 
+	"io"
 
   	"gopkg.in/urfave/cli.v2"
 )
@@ -73,6 +74,20 @@ func resultShelCmd(cmd string) {
 
 }
 
+func IsEmpty(name string) (bool, error) {
+    f, err := os.Open(name)
+    if err != nil {
+        return false, err
+    }
+    defer f.Close()
+
+    _, err = f.Readdirnames(1) // Or f.Readdir(1)
+    if err == io.EOF {
+        return true, nil
+    }
+    return false, err // Either not empty or error, suits both cases
+}
+
 func main() {
   app := &cli.App{
     Name: "cli_stub",
@@ -101,9 +116,17 @@ func main() {
 				work_dir := getWorkDirPath(path)
 
 				if _, err := os.Stat(work_dir); !os.IsNotExist(err) {
-					fmt.Println("Directory exists")
-					err := errors.New("Directry exist")
-					return err
+
+					isEmpty, err :=  IsEmpty(work_dir)
+					if err != nil {
+						return err
+					}
+
+					if  !isEmpty {
+						fmt.Println("Directory exists")
+						err := errors.New("Directry exist")
+						return err
+					}
 				}
 
 				if _, err := os.Stat(work_dir); os.IsNotExist(err) {
