@@ -8,6 +8,7 @@ import (
   	"strings"
 	"errors" 
 	"io"
+	"html/template"
 
   	"gopkg.in/urfave/cli.v2"
 )
@@ -71,6 +72,107 @@ func resultShelCmd(cmd string) {
 		fmt.Println("--- stderr ---")
 		fmt.Println(errout)
 	}
+}
+
+type ContextDocker struct{
+	Name string
+}
+
+func createDockerComposeFiale(path string, name string) error {
+	context := ContextDocker {
+		Name: name,
+	}
+
+	path_template := path + "stub/templates/docker/docker-compose.yml"
+
+	tmpl, _ := template.ParseFiles(path_template)
+
+
+
+	file, err := os.Create(path + "stub/docker-compose.yml")
+	if err != nil {
+		return err
+	}
+	
+	err = tmpl.Execute(file, context)
+
+	if err != nil {
+		return err
+	}
+
+	file.Close()
+
+	return nil
+
+} 
+
+func Copy(src, dst string) error {
+
+    in, err := os.Open(src)
+    if err != nil {
+        return err
+    }
+    defer in.Close()
+
+    out, err := os.Create(dst)
+    if err != nil {
+        return err
+    }
+    defer out.Close()
+
+    _, err = io.Copy(out, in)
+    if err != nil {
+        return err
+    }
+    return  nil
+}
+
+type ContextNginx struct{
+	Domain string
+}
+
+func createNginxSettings(path string, name string, domain string) error {
+	path_dir_template := path + "stub/templates/nginx/"
+
+	path_dir_nginx := path + "stub/nginx/"
+
+	err := os.MkdirAll(path_dir_nginx, os.ModePerm)
+
+	if err != nil {
+		return err
+	}
+
+	err = Copy(path_dir_template+"Dockerfile", path_dir_nginx+"Dockerfile")
+	if err != nil {
+		return err
+	}
+	err = Copy(path_dir_template+".htpasswd", path_dir_nginx+".htpasswd")
+	if err != nil {
+		return err
+	}
+
+	context := ContextNginx {
+		Domain: domain,
+	}
+
+	tmpl, _ := template.ParseFiles(path_dir_template+"service.conf")
+
+
+
+	file, err := os.Create(path + "stub/nginx/service.conf")
+	if err != nil {
+		return err
+	}
+	
+	err = tmpl.Execute(file, context)
+
+	if err != nil {
+		return err
+	}
+
+	file.Close()
+
+	return nil
 
 }
 
@@ -109,10 +211,23 @@ func main() {
 				  Value:       "stub",
 				  Usage:       "name project",
 				},
+				&cli.BoolFlag{
+					Name:        "nginx",
+					Value:       false,
+					Usage:       "name project",
+				  },
+				&cli.StringFlag{
+					Name:        "domain",
+					Value:       "test.ru",
+					Usage:       "name project",
+				  }, 
 			},
 			Action: func(c *cli.Context) error {
 				path := c.String("path")
 				name := c.String("name")
+				nginx := c.Bool("nginx")
+				domain := c.String("domain")
+
 				work_dir := getWorkDirPath(path)
 
 				if _, err := os.Stat(work_dir); !os.IsNotExist(err) {
@@ -140,7 +255,15 @@ func main() {
 				cmd = "cd " + work_dir + "/stub && rm -rf .git"
 				resultShelCmd(cmd)
 
+				createDockerComposeFiale(path, name)
 
+				if nginx {
+					createNginxSettings(path, name, domain)
+				}
+
+				cmd =  "cd " + work_dir + "/stub && rm -rf templates"
+				resultShelCmd(cmd)
+				
 				if name != "stub" {
 					cmd := "mv " + work_dir + "/stub " + work_dir + "/" + name
 					resultShelCmd(cmd)
