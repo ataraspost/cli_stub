@@ -2,14 +2,14 @@ package utilities
 
 import (
 	"github.com/ataraspost/cli_stub/structures"
-	"os"
 	"html/template"
+	"os"
 )
 
-func CreateNginxSettings(path string, name string, domain string) error {
-	path_dir_template := path + "stub/templates/nginx/"
+func CreateNginxSettings(path string, domain string) error {
+	path_dir_template := path + "/stub/templates/nginx/"
 
-	path_dir_nginx := path + "stub/nginx/"
+	path_dir_nginx := path + "/stub/nginx/"
 
 	err := os.MkdirAll(path_dir_nginx, os.ModePerm)
 
@@ -32,7 +32,7 @@ func CreateNginxSettings(path string, name string, domain string) error {
 
 	tmpl, _ := template.ParseFiles(path_dir_template+"service.conf")
 
-	file, err := os.Create(path + "stub/nginx/service.conf")
+	file, err := os.Create(path + "/stub/nginx/service.conf")
 	if err != nil {
 		return err
 	}

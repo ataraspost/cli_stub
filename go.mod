@@ -1,5 +1,4 @@
-module cli_stub
+module github.com/ataraspost/cli_stub
+go 1.16
 
-go 1.15
-
-require gopkg.in/urfave/cli.v1 v1.20.0
+require github.com/urfave/cli/v2 v2.3.0
