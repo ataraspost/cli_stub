@@ -1,15 +1,17 @@
 package utilities
 
-
 func CreateCiCdSettings(path string) error {
-	path_dir_template := path + "/stub/templates/ci_cd/"
+	path_template := path + "/stub/templates/ci_cd/"
 
-	path_dir_nginx := path + "/stub/"
+	path_project := path + "/stub/"
 
-	err := Copy(path_dir_template+"Dockerfile", path_dir_nginx+"Dockerfile")
+	err := Copy(path_template+".gitlab-ci.yml", path_project+".gitlab-ci.yml")
+
 	if err != nil {
 		return err
 	}
+
 	return nil
+
 
 }
